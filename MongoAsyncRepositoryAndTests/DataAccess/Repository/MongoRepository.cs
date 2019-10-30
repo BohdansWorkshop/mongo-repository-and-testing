@@ -1,15 +1,15 @@
-﻿using DataAccess.Models;
+﻿using DataAccess.Interfaces;
+using DataAccess.Models;
 using MongoDB.Driver;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
-using System.Text;
-using System.Threading.Tasks;
+
 
 namespace DataAccess.Repository
 {
-    public class MongoRepository<TModel> where TModel : BaseModel
+    public class MongoRepository<TModel> : IMongoRepository<TModel> where TModel : BaseModel
     {
         private readonly IMongoCollection<TModel> _repository;
         public MongoRepository(MongoDbConfiguration configuration)
@@ -17,39 +17,64 @@ namespace DataAccess.Repository
             _repository = new MongoContext<TModel>(configuration).Collection;
         }
 
-        public async Task<ICollection<TModel>> GetAll()
+        public TModel GetById(Guid id)
         {
-            return await _repository.Find(x=> true).ToListAsync();
+            return _repository.Find(x => x.Id == id).FirstOrDefault();
         }
 
-        public async Task Save(TModel model)
+        public ICollection<TModel> GetAll()
         {
-            await _repository.InsertOneAsync(model);
+            return _repository.Find(x => true).ToList();
         }
 
-        public async Task<bool> Remove(TModel model)
+        public void Save(TModel model)
         {
-            var actionResult = await _repository.DeleteOneAsync(x=> x == model);
+            _repository.InsertOne(model);
+        }
+
+        public void Upsert(TModel model)
+        {
+            var updateOptions = new UpdateOptions()
+            {
+                IsUpsert = true
+            };
+
+            _repository.ReplaceOne(x => x.Id == model.Id, model, options: updateOptions);
+        }
+
+        public bool Remove(TModel model)
+        {
+            var actionResult = _repository.DeleteOne(x => x == model);
             return actionResult.IsAcknowledged && actionResult.DeletedCount > 0;
         }
 
-        public async Task<bool> RemoveAll(Expression<Func<TModel, bool>> expression)
+        public bool RemoveAll()
         {
-            var actionResult = await _repository.DeleteManyAsync(expression);
-
+            var actionResult = _repository.DeleteMany(x => true);
             return actionResult.IsAcknowledged && actionResult.DeletedCount > 0;
         }
 
-        public async Task<ICollection<TModel>> FindAll(Expression<Func<TModel, bool>> expression)
+        public bool RemoveAll(Expression<Func<TModel, bool>> expression)
         {
-            return await _repository.Find(expression).ToListAsync();
+            var actionResult = _repository.DeleteMany(expression);
+            return actionResult.IsAcknowledged && actionResult.DeletedCount > 0;
         }
 
-        public async Task<ICollection<TModel>> GetPage(Guid id, int takeCount)
+        public ICollection<TModel> FindAll()
+        {
+            return _repository.Find(x => true).ToList();
+        }
+
+        public ICollection<TModel> FindAll(Expression<Func<TModel, bool>> expression)
+        {
+            return _repository.Find(expression).ToList();
+        }
+
+        public ICollection<TModel> GetPage(Guid id, int takeCount)
         {
             var filterBuilder = Builders<TModel>.Filter;
             var filter = filterBuilder.Gt(x => x.Id, id);
-            return await _repository.Find(filter).Limit(takeCount).ToListAsync();
+            return _repository.Find(filter).Limit(takeCount).ToList();
         }
 
         public IQueryable<TModel> GetAsQueryable()
