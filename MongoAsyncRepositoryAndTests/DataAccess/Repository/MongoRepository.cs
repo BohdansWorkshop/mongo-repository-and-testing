@@ -45,11 +45,17 @@ namespace DataAccess.Repository
             return await _repository.Find(expression).ToListAsync();
         }
 
-        //TODO Getting Page
-        //public async Task<ICollection<TModel>> GetPage()
-        //{
+        public async Task<ICollection<TModel>> GetPage(Guid id, int takeCount)
+        {
+            var filterBuilder = Builders<TModel>.Filter;
+            var filter = filterBuilder.Gt(x => x.Id, id);
+            return await _repository.Find(filter).Limit(takeCount).ToListAsync();
+        }
 
-        //}
+        public IQueryable<TModel> GetAsQueryable()
+        {
+            return _repository.AsQueryable();
+        }
 
     }
 }
