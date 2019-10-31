@@ -22,7 +22,6 @@ namespace DataAccess.Test.NUnit
             _mockData = GenerateFakeData();
 
             _mockRepository = new Mock<IMongoRepository<TextDataModel>>();
-
             _mockRepository.Setup(x => x.FindAll()).Returns(_mockData);
 
             _mockRepository.Setup(x => x.GetById(It.IsAny<Guid>())).Returns((Guid id) => { return _mockData.Where(x => x.Id == id).FirstOrDefault(); });
@@ -53,7 +52,7 @@ namespace DataAccess.Test.NUnit
             Assert.AreEqual(_mockRepository.Object.GetPage(_mockData[1].Id, 2), resultsList);
         }
 
-        public List<TextDataModel> GenerateFakeData()
+       private List<TextDataModel> GenerateFakeData()
         {
             return new List<TextDataModel>
         {
