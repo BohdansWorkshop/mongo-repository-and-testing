@@ -39,7 +39,7 @@ namespace Client
                 model.Name = "Ok, go next";
             }
 
-            textModelRepository.AddOrUpdate(model).Wait();
+            textModelRepository.Upsert(model).Wait();
 
             var nextpage = textModelRepository.GetPage(Guid.Parse("7a724c04-5b8d-4e20-bf46-f0579bb14ad8"), 10).Result.ToList();
    
